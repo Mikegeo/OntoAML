@@ -24,7 +24,7 @@ from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from datetime import datetime
-from predict_try3 import Ui_prediction as Form1
+from main.predict.predict_try3 import Ui_prediction as Form1
 
 
 class mainFolder(QMessageBox):
