@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'Try10.ui'
+# Form implementation generated from reading training_ui file 'Try10.training_ui'
 #
 # Created by: PyQt5 UI code generator 5.12.3
 #
@@ -8,14 +8,14 @@
 
 
 import pandas as pd
-from pandas_profiling import ProfileReport
+from ydata_profiling import ProfileReport
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel
 from PyQt5.QtWidgets import QFileDialog, QMessageBox
 import json
 from owlready2 import *
-import conf
+from main.conf_files import conf
 import numpy as np
 import sys
 
@@ -24,44 +24,11 @@ from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from datetime import datetime
-from main.predict.predict_try3 import Ui_prediction as Form1
 
-
-class mainFolder(QMessageBox):
-
-    def __init__(self, parent=None):
-        super(mainFolder, self).__init__(parent)
-        self.main_path_list = []
-
-    def messageBox2(self):
-        main_path_ = []
-        msg2 = QMessageBox()
-        msg2.setWindowTitle("Save Project")
-        msg2.setIcon(QMessageBox.Question)
-        msg2.setText("Do you want to save the new project on the Desktop or Somewhere else?")
-        desktop_button = msg2.addButton("Desktop", QtWidgets.QMessageBox.YesRole)
-        somewhere_else_btn = msg2.addButton("Somewhere Else", QtWidgets.QMessageBox.NoRole)
-        cancel_btn = msg2.addButton("Cancel", QtWidgets.QMessageBox.NoRole)
-        x2 = msg2.exec_()
-        if msg2.clickedButton() == somewhere_else_btn:
-            dialog = QFileDialog()
-            filepath = dialog.getSaveFileName(os.getenv('Home'))
-            if not filepath[0]:
-                main_path_.append(None)
-                self.main_path_list.append(None)
-                return None
-            else:
-                main_path = filepath[0]
-                main_path_.append(filepath[0])
-                self.main_path_list.append(filepath[0])
-                print(main_path)
-        elif msg2.clickedButton() == desktop_button:
-            self.main_path_list.append("Desktop")
-        elif msg2.clickedButton() == cancel_btn:
-            self.main_path_list.append("Cancel")
-        return main_path_
-
-    sys.stdout.flush()
+from main.create.data_analyzer import DataAnalyzer
+from main.create.data_profiler import DataProfiler
+from main.create.message_box import MessageBox
+from main.predict.predict_main import Ui_prediction as Form1
 
 
 class CheckableComboBox(QComboBox):
@@ -128,11 +95,11 @@ class CheckableComboBox(QComboBox):
 
             item_new_text_label = text_label + ' - selected item(s): ' + n
 
-            #item_new_text_label = text_label
+            # item_new_text_label = text_label
 
             #            self.model().item(i).setText(item_new_text_label)
             self.setItemText(i, item_new_text_label)  # copy/paste error corrected.
-            #training.ui.deleteColumnsText.setText(",".join(map(str, labels)))
+            # training.training_ui.deleteColumnsText.setText(",".join(map(str, labels)))
 
     sys.stdout.flush()
 
@@ -141,6 +108,8 @@ class Ui_Training(object):
 
     def __init__(self):
         super(Ui_Training, self).__init__()
+        self.data_profiler = DataProfiler(self)
+        self.data_analyzer = DataAnalyzer(self)
 
     def setupUi(self, Training):
         Training.setObjectName("Training")
@@ -285,7 +254,6 @@ class Ui_Training(object):
 
         self.uploadDatasetBtn.clicked.connect(self.uploadDataset)
         self.openDatasetProfileBtn.clicked.connect(self.openDatasetProfiling)
-        self.datasetDetailsBtn.clicked.connect(self.datasetDetailsProfiling)
         self.createPipelinesBtn.clicked.connect(self.runReasoner)
         self.runPipelinesBtn.clicked.connect(self.runPipelines)
         # back button
@@ -293,7 +261,7 @@ class Ui_Training(object):
         self.backBtn.clicked.connect(Training.close)
         self.runPredictionsBtn.clicked.connect(Training.close)
         self.runPredictionsBtn.clicked.connect(self.run_predictions)
-
+        self.datasetDetailsBtn.clicked.connect(self.data_profiler.datasetDetailsProfiling)
 
     def retranslateUi(self, Training):
         _translate = QtCore.QCoreApplication.translate
@@ -342,99 +310,6 @@ class Ui_Training(object):
             self.newProjectsPathLineEdit.clear()
             self.openDatasetProfileBtn.setEnabled(False)
 
-
-    def date_time(self):
-        # datetime object containing current date and time
-        now = datetime.now()
-        dt_string = now.strftime("_date_%d_%m_%Y_time_%H_%M")
-        return dt_string
-
-    def datasetDetailsProfiling(self):
-        msg1 = QMessageBox()
-        msg1.setWindowTitle("Dataset")
-        msg1.setIcon(QMessageBox.Information)
-        msg1.setText("Checking dataset's information it might take some time please press OK to continue")
-        msg1.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-        x = msg1.exec_()
-        if x == QMessageBox.Ok:
-            pass
-        else:
-            return None
-        p = mainFolder()
-        p.messageBox2()
-        main_path_list = p.main_path_list
-        if main_path_list[0] == "Cancel":
-            return None
-        elif main_path_list[0] == "Desktop":
-            pass
-        while None in main_path_list:
-            p = mainFolder()
-            p.messageBox2()
-            main_path_list = p.main_path_list
-        else:
-            pass
-        msg3 = QMessageBox()
-        msg3.setWindowTitle("Dataset Profiling")
-        msg3.setIcon(QMessageBox.Information)
-        msg3.setText("The system will inform you at the end of the process")
-        msg3.setStandardButtons(QMessageBox.Ok)
-        msg3.addButton("Cancel Analyse Process", QtWidgets.QMessageBox.NoRole)
-        x3 = msg3.exec_()
-        if x3 == QMessageBox.Ok:
-            pass
-        else:
-            return None
-        # Get the dataset's path and then open the dataset
-        path = self.datasetPathLineEdit.text()
-        dt_string = self.date_time()
-        # Desktop path
-        desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
-        with open(path, "r") as file:
-            # get the name of the file on the path
-            dataset_name_ext = os.path.basename(path)
-            dataset_name = os.path.splitext(dataset_name_ext)[0]
-            # Missing values possible formats
-            missing_values_formats = ["n/a", "na", "--", "?", " ", "NA", "N/A"]
-            # Separation possible formats
-            # separation = "[,]+|;|:" , sep=separation
-            reader = pd.read_csv(file, header=0, sep=None, na_values=missing_values_formats, engine='python',
-                                 encoding='UTF-8')
-            df = pd.DataFrame(data=reader)
-            # check the number of samples in the dataset if is over 10000 then do a minimal report
-            if len(df) > 10000:
-                # sample = df.sample(10000)
-                profile = ProfileReport(df, minimal=True,  html={'style': {'full_width': True}})
-            # check if the number of columns in the dataset are over 200 and do minimal report
-            elif len(df.axes[1]) > 150:
-                profile = ProfileReport(df, minimal=True,  html={'style': {'full_width': True}})
-            else:
-                profile = ProfileReport(df,  html={'style': {'full_width': True}})
-            # Identify categorical columns
-            # Save the report
-            if main_path_list[0] == "Desktop":
-                main_folder = "" + desktop + "/Main_Pipeline_" "" + "" + dataset_name + "" + "" + dt_string + ""
-                self.newProjectsPathLineEdit.setText(main_folder)
-            else:
-                main_folder = main_path_list[0]
-                self.newProjectsPathLineEdit.setText(main_path_list[0])
-            if not os.path.exists(main_folder):
-                os.mkdir(main_folder)
-                os.mkdir(main_folder + "/" + dataset_name + "" "_profile")
-            html_profile = profile.to_html()
-            profile.to_file(main_folder + "/" "" + dataset_name + "" + "_profile" + "/your_report.html")
-            # As a string
-            json_data = profile.to_json()
-            # As a file
-            profile.to_file(main_folder + "/" "" + dataset_name + "" + "_profile" + "/your_report.json")
-            if os.path.isfile(main_folder + "/" "" + dataset_name + "" + "_profile" + "/your_report.json"):
-                msg3 = QMessageBox()
-                msg3.setWindowTitle("Dataset")
-                msg3.setIcon(QMessageBox.Information)
-                msg3.setText("The dataset's details are ready")
-                msg3.buttonClicked.connect(self.datasetDetails)
-                x = msg3.exec_()
-                self.openDatasetProfileBtn.setEnabled(True)
-
     def openDatasetProfiling(self):
         import webbrowser
         main_folder = self.newProjectsPathLineEdit.text()
@@ -445,163 +320,19 @@ class Ui_Training(object):
         if os.path.isfile(html_file2):
             webbrowser.open(html_file2, new=2)
 
-    def datasetDetails(self):
-        path = self.datasetPathLineEdit.text()
-        dataset_name_ext = os.path.basename(path)
-        dataset_name = os.path.splitext(dataset_name_ext)[0]
-        main_folder = self.newProjectsPathLineEdit.text()
-        name_column = []
-        type_column = []
-        uniform_unique_columns = []
-        missing_values_number = ""
-        sample_size = ""
-        feature_size = ""
-        with open("" + main_folder + "/" "" + dataset_name + "" + "_profile" + "/your_report.json") as data_file:
-            data = json.load(data_file)
-            # find the numerical and categorical features
-            for key, value in data.items():
-                if key == "variables":
-                    if type(value) == dict:
-                        for item, item1 in value.items():
-                            name_column.append(item)
-                            if type(item1) == dict:
-                                for element1, element2 in item1.items():
-                                    if element1 == "type":
-                                        type_column.append(element2)
-            # find the missing values
-            for key, value in data.items():
-                if key == "table":
-                    for item, item2 in value.items():
-                        if item == "n_cells_missing":
-                            missing_values_number = item2
-                        if item == "n":
-                            sample_size = item2
-                        if item == "n_var":
-                            feature_size = item2
-            # get uniform unique columns
-            for key, value in data.items():
-                if key == "variables":
-                    if type(value) == dict:
-                        for item, item1 in value.items():
-                            if type(item1) == dict:
-                                for element1, element2 in item1.items():
-                                    if element1 == "is_unique":
-                                        if element2 == bool(True):
-                                            uniform_unique_columns.append(item)
-        # create a dictionary with features and their types
-        dicts = {name_column[i]: type_column[i] for i in range(len(type_column))}
-        numerical_columns = []
-        categorical_columns = []
-        for key, value in dicts.items():
-            if value == "Categorical":
-                categorical_columns.append(key)
-            elif value == "Boolean":
-                categorical_columns.append(key)
-            else:
-                numerical_columns.append(key)
-        # create a dictionary to get the categorical columns with numerical values e.g. only 0,1
-        cat_columns_with_num_values_names = []
-        cat_columns_with_num_values = []
-        num_columns_with_cat_values = []
-        columns_with_high_missing_values_number = []
-        for key, value in data.items():
-            if key == "variables":
-                if type(value) == dict:
-                    for item, item1 in value.items():
-                        if type(item1) == dict:
-                            for element1, element2 in item1.items():
-                                if element1 == "category_alias_values":
-                                    cat_columns_with_num_values_names.append(item)
-                                    if type(element2) == dict:
-                                        if all(element4 == "Decimal_Number" for element4 in element2.values()) \
-                                                or all(element4 in element2.values() for element4
-                                                       in ["Decimal_Number", "Other_Punctuation"]) and \
-                                                set(element2.keys()) == set(["Decimal_Number", "Other_Punctuation"]):
-                                                # or (all(element4 in element2.values() for element4 in
-                                                #         ("Decimal_Number", "Other_Punctuation"))):
-
-                                            cat_columns_with_num_values.append("yes")
-                                        else:
-                                            cat_columns_with_num_values.append("no")
-                                if element1 == "p_missing":
-                                    if element2 > 0.95:
-                                        columns_with_high_missing_values_number.append(item)
-                                # checks if there is a column which has numerical values but it has to be
-                                # considered as categorical column
-                                if element1 == "type" and element2 == "Numeric":
-                                    for element3, element4 in item1.items():
-                                        if element3 == "p_distinct" and element4 < 0.000099:
-                                            for element5, element6 in item1.items():
-                                                if element5 == "value_counts_without_nan":
-                                                    if type(element6) == dict:
-                                                        for k in element6.keys():
-                                                            if k.replace('.', '', 1).isnumeric() and len(k) == 1:
-                                                                num_columns_with_cat_values.append(item)
-                                if element1 == "type" and element2 == "Numeric":
-                                    for element3, element4 in item1.items():
-                                        if element3 == "n_distinct" and element4 <= 3:
-                                            for element5, element6 in item1.items():
-                                                if element5 == "value_counts_without_nan":
-                                                    if type(element6) == dict:
-                                                        for k in element6.keys():
-                                                            if k.replace('.', '', 1).isnumeric() and len(k) == 1:
-                                                                num_columns_with_cat_values.append(item)
-        dicts2 = {cat_columns_with_num_values_names[i]: cat_columns_with_num_values[i]
-                  for i in range(len(cat_columns_with_num_values))}
-        categorical_columns_with_numerical_values = []
-        for key, value in dicts2.items():
-            if value == "yes":
-                categorical_columns_with_numerical_values.append(key)
-        numerical_columns_with_categorical_values = []
-        if len(num_columns_with_cat_values) != 0:
-            for item in num_columns_with_cat_values:
-                if item not in numerical_columns_with_categorical_values:
-                    numerical_columns_with_categorical_values.append(item)
-        if len(num_columns_with_cat_values) != 0:
-            for item in num_columns_with_cat_values:
-                if item in numerical_columns:
-                    numerical_columns.remove(item)
-                    categorical_columns.append(item)
-            print("numer", numerical_columns)
-            print(len(numerical_columns))
-            print("cat", categorical_columns)
-            print(len(categorical_columns))
-            for item in num_columns_with_cat_values:
-                if item not in categorical_columns_with_numerical_values:
-                    categorical_columns_with_numerical_values.append(item)
-        # Print the results
-        self.textViewFeatureSize.setText(str(feature_size))
-        self.textViewSampleSize.setText(str(sample_size))
-        for target_column in numerical_columns:
-            self.comboBoxTargetColumn.addItem(target_column)
-        for target_column in categorical_columns:
-            self.comboBoxTargetColumn.addItem(target_column)
-        # checkable combobox
-        column_list = []
-        for target_column in numerical_columns:
-            column_list.append(target_column)
-        for target_column in categorical_columns:
-            column_list.append(target_column)
-        self.comboBoxDeleteColumns.addItem("None")
-        self.comboBoxDeleteColumns.addItems(column_list)
-        # traversing items
-        for i in range(len(column_list)):
-            # adding item
-            item = self.comboBoxDeleteColumns.model().item(i, 0)
-            # setting item unchecked
-            item.setCheckState(Qt.Unchecked)
-
-        return sample_size, feature_size, numerical_columns, categorical_columns, missing_values_number, \
-               dataset_name, categorical_columns_with_numerical_values, column_list, num_columns_with_cat_values
-
         # ####################################
         # ##### GET USER PREFERENCES #########
         # ####################################
 
+    def datasetDetails(self):
+        sample_size, feature_size, numerical_columns, categorical_columns, missing_values_number, dataset_name, \
+            categorical_columns_with_numerical_values, column_list, num_columns_with_cat_values = self.data_analyzer.dataset_details()
+        return sample_size, feature_size, numerical_columns, categorical_columns, missing_values_number, dataset_name, \
+            categorical_columns_with_numerical_values, column_list, num_columns_with_cat_values
+
     def saveDeleteComboBox(self):
-        sample_size, feature_size, numerical_columns, categorical_columns, missing_values_number, \
-        dataset_name, categorical_columns_with_numerical_values, column_list, num_columns_with_cat_values\
-            = self.datasetDetails()
+        sample_size, feature_size, numerical_columns, categorical_columns, missing_values_number, dataset_name, \
+            categorical_columns_with_numerical_values, column_list, num_columns_with_cat_values = self.datasetDetails()
         text = self.comboBoxDeleteColumns.currentText()
         new_text = text.split(": ")[1]
         get_index = new_text.split(",")
@@ -641,9 +372,8 @@ class Ui_Training(object):
         return uniform_unique_columns
 
     def getUserPreferences(self):
-        sample_size, feature_size, numerical_columns, categorical_columns, missing_values_number, \
-        dataset_name, categorical_columns_with_numerical_values, column_list, num_columns_with_cat_values = \
-            self.datasetDetails()
+        sample_size, feature_size, numerical_columns, categorical_columns, missing_values_number, dataset_name, \
+            categorical_columns_with_numerical_values, column_list, num_columns_with_cat_values = self.datasetDetails()
         column_list.insert(0, "None")
         # These are the user preferences
         # Check box for Speed user preferences
@@ -675,7 +405,7 @@ class Ui_Training(object):
                 labels.clear()
         if (interpretability or accuracy or speed) and (extensive or random):
             return speed, accuracy, interpretability, extensive, random, target_column_type, feature_size, sample_size, \
-                   labels
+                labels
         else:
             exception = QMessageBox()
             exception.setWindowTitle("Error")
@@ -695,10 +425,9 @@ class Ui_Training(object):
             return
         else:
             speed, accuracy, interpretability, extensive, random, target_column_type, feature_size, sample_size, \
-            new_selected_delete_columns = self.getUserPreferences()
-            sample_size, feature_size, numerical_columns, categorical_columns, missing_values_number, \
-            dataset_name, categorical_columns_with_numerical_values, columns_list, num_columns_with_cat_values\
-                = self.datasetDetails()
+                new_selected_delete_columns = self.getUserPreferences()
+            sample_size, feature_size, numerical_columns, categorical_columns, missing_values_number, dataset_name, \
+                categorical_columns_with_numerical_values, column_list, num_columns_with_cat_values = self.datasetDetails()
             # Load the ontology (load ntriples or xml to get the rules)
             world = World()
             onto = world.get_ontology("file:///Users/micha/PycharmProjects/MLPipeline/version14.rdf").load()
@@ -786,9 +515,8 @@ class Ui_Training(object):
             self.createIndividual()
             main_folder = self.newProjectsPathLineEdit.text()
             print(main_folder)
-            sample_size, feature_size, numerical_columns, categorical_columns, missing_values_number, \
-            dataset_name, categorical_columns_with_numerical_values, columns_list, num_columns_with_cat_values\
-                = self.datasetDetails()
+            sample_size, feature_size, numerical_columns, categorical_columns, missing_values_number, dataset_name, \
+                categorical_columns_with_numerical_values, column_list, num_columns_with_cat_values = self.datasetDetails()
             # world2 = World()
             # list_of_files = glob.glob('C:/Users/micha/PycharmProjects/MLPipeline/*.nt')
             # latest_file = max(list_of_files, key=os.path.getctime)
@@ -929,7 +657,7 @@ class Ui_Training(object):
                 for model in model_pipeline_points:
                     model_name_only = str(model.split(".")[2])
                     if os.path.exists(os.path.join("" + main_folder + "/" + "" + model_name_only + ""
-                                          + "_Pipeline")):
+                                                   + "_Pipeline")):
                         continue
                     else:
                         os.mkdir(os.path.join("" + main_folder + "/" + "" + model_name_only + ""
@@ -1125,13 +853,15 @@ new_selected_features = []
                             # create the pipeline
                             for key, value in conf.model_names_for_pipeline_dict.items():
                                 if key == point and key == "sklearn.impute.SimpleImputer":
-                                    f.write("   (\'" + value + "\'" + ", " + value + "(strategy='most_frequent'))," + "\n")
+                                    f.write(
+                                        "   (\'" + value + "\'" + ", " + value + "(strategy='most_frequent'))," + "\n")
                                     continue
                                 # elif (key == point) and (key == "sklearn.preprocessing.OneHotEncoder") and
                                 #     len(ca)
                                 elif key == point and key == "sklearn.preprocessing.OneHotEncoder":
-                                    f.write("   (\'" + value + "\'" + ", " + value + "(sparse=False, handle_unknown='ignore')),"
-                                            + "\n")
+                                    f.write(
+                                        "   (\'" + value + "\'" + ", " + value + "(sparse=False, handle_unknown='ignore')),"
+                                        + "\n")
                                     continue
                                 elif key == point:
                                     f.write("   (\'" + value + "\'" + ", " + value + ")," + "\n")
@@ -1219,7 +949,8 @@ new_selected_features = []
                                                     "],\n"))
                                                 grid_params.update({element3: element4})
                                     if type(element2) == list:
-                                        f.write("{}".format(str("   \'" + element1 + "\'") + ": " + str(element2) + ",\n"))
+                                        f.write(
+                                            "{}".format(str("   \'" + element1 + "\'") + ": " + str(element2) + ",\n"))
                                         grid_params.update({element1: element2})
                                     if type(element2) == np.ndarray:
                                         f.write("{}".format(
@@ -1274,7 +1005,8 @@ new_selected_features = []
                                                     grid_params.update({element3: element4})
                                         if type(element2) == list:
                                             f.write(
-                                                "{}".format(str("   \'" + element1 + "\'") + ": " + str(element2) + ",\n"))
+                                                "{}".format(
+                                                    str("   \'" + element1 + "\'") + ": " + str(element2) + ",\n"))
                                             grid_params.update({element1: element2})
                                         if type(element2) == np.ndarray:
                                             f.write("{}".format(str("   \'" + element1 + "\'") + ": ["
@@ -1303,7 +1035,8 @@ target_labels_file = open(os.path.join(file_dir, 'target_labels.pkl'), "wb")
 dill.dump(target_labels, target_labels_file)
                      """)
                     elif machine_learning_problem == "Regression":
-                        f.write("X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, random_state=0)")
+                        f.write(
+                            "X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, random_state=0)")
                     # take the name of the model
                     model_name = ""
                     model_name2 = ""
@@ -2935,7 +2668,8 @@ shap_explainer = shap.KernelExplainer(pipeline.named_steps[""" + model_name + ""
 #     dill.dump(shap_explainer, f)
 shap_explainer_file = open(os.path.join(file_dir, 'Kernel_shap_explainer'), "wb")
 dill.dump(shap_explainer, shap_explainer_file)\n""")
-                        elif (shap_explainer_type[0] == "KernelExplainer") and (machine_learning_problem == "Regression")\
+                        elif (shap_explainer_type[0] == "KernelExplainer") and (
+                                machine_learning_problem == "Regression") \
                                 and (len(fs_pipeline_points) != 0):
                             f.write("""
 new_selected_features = []
@@ -2972,7 +2706,8 @@ shap_explainer = shap.KernelExplainer(pipeline.named_steps[""" + model_name + ""
 #     dill.dump(shap_explainer, f)
 shap_explainer_file = open(os.path.join(file_dir, 'Kernel_shap_explainer'), "wb")
 dill.dump(shap_explainer, shap_explainer_file)\n""")
-                        elif (shap_explainer_type[0] == "KernelExplainer") and (machine_learning_problem == "Regression")\
+                        elif (shap_explainer_type[0] == "KernelExplainer") and (
+                                machine_learning_problem == "Regression") \
                                 and (len(fs_pipeline_points) == 0):
                             f.write("""
 from sklearn.impute import SimpleImputer
@@ -3380,7 +3115,7 @@ except:
     # #########################################
 
     def back(self):
-        from main_page import Ui_MainWindow
+        from main.main_page import Ui_MainWindow
         main_page = QtWidgets.QMainWindow()
         main_page.ui = Ui_MainWindow()
         main_page.ui.setupUi(main_page)
@@ -3434,6 +3169,7 @@ except:
 
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     Training = QtWidgets.QDialog()
     ui = Ui_Training()

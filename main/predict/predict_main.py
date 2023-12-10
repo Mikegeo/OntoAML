@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-
-# Form implementation generated from reading ui file 'predict_try2.ui'
+import eli5
+# Form implementation generated from reading training_ui file 'predict_try2.training_ui'
 #
 # Created by: PyQt5 UI code generator 5.12.3
 #
@@ -13,9 +13,7 @@ import os
 import numpy as np
 import pandas as pd
 import fnmatch
-from sklearn.impute import SimpleImputer
 from matplotlib import pyplot as plt
-import eli5
 import shap
 import dill
 import joblib
@@ -24,6 +22,8 @@ import webbrowser
 from PIL import Image
 from fuzzywuzzy import process
 from os.path import exists
+
+from sklearn.impute import SimpleImputer
 
 
 class Ui_prediction(object):
@@ -614,23 +614,6 @@ class Ui_prediction(object):
                     x_lime.iloc[:, k] = x_lime.iloc[:, k].map(label_map)
                 return x_lime
 
-            # def shap_and_eli5_custom_format(x):
-            #     j_data = convert_to_lime_format(x, categorical_names)
-            #     try:
-            #         imp_mean = SimpleImputer(missing_values=np.nan, strategy='median')
-            #         imp_mean.fit(j_data)
-            #     except:
-            #         imp_mean = SimpleImputer(missing_values=np.nan, strategy='most_frequent')
-            #         imp_mean.fit(j_data)
-            #     custom_data = pd.DataFrame(imp_mean.fit_transform(j_data), columns=x.columns, index=j_data.index)
-            #     print(custom_data)
-            #     print(x.columns)
-            #     if check_new_selected_features[0] != "no_selected_features":
-            #         return custom_data[new_selected_features]
-            #     else:
-            #         data = x
-            #         ohe_data = pd.DataFrame(data_prepro.transform(data), columns=all_features)
-            #         return ohe_data
             def shap_and_eli5_custom_format(x):
                 j_data = convert_to_lime_format(x, categorical_names)
                 print(j_data)
@@ -653,21 +636,8 @@ class Ui_prediction(object):
                     ohe_data = pd.DataFrame(data_prepro.transform(data), columns=all_features)
                     return ohe_data
 
-            # def imputed_data(x):
-            #     if df.isna().any().any():
-            #         data = df
-            #         imp_mean = SimpleImputer(missing_values=np.nan, strategy='median')
-            #         imp_mean.fit(data)
-            #         shap_imputed_data = pd.DataFrame(imp_mean.fit_transform(data), columns=x.columns, index=data.index)
-            #         return shap_imputed_data
-            #     else:
-            #         return df
-            #
-            # shap_and_eli5_dataset1 = data_prepro.transform(df)
-            # shap_and_eli5_dataset = shap_and_eli5_custom_format(df)
             # pipeline's model
             pipeline_model = pipeline.named_steps["" + pipeline.steps[-1][0] + ""]
-           # print(pipeline_model.predict(shap_and_eli5_dataset))
             with open(path, "r") as file:
                 missing_values_formats = ['n/a', 'na', '--', '?', ' ', 'NA', 'N/A']
                 reader = pd.read_csv(file, header=0, na_values=missing_values_formats, sep=None, engine='python',
@@ -680,9 +650,7 @@ class Ui_prediction(object):
                     shap_and_eli5_dataset = shap_and_eli5_custom_format(df)
                 else:
                     shap_and_eli5_dataset = df
-            # shap_and_eli5_dataset1 = data_prepro.transform(df)
-            #     shap_and_eli5_dataset = pd.DataFrame(shap_and_eli5_dataset1, columns=all_features)
-            #     print(shap_and_eli5_dataset.to_string)
+
                 # show the local prediction of a single selected value
                 eli5_observation = shap_and_eli5_dataset.iloc[[i], :]
                 eli5_observation_index = shap_and_eli5_dataset.index[i]
@@ -692,13 +660,6 @@ class Ui_prediction(object):
                     all_features, new_all_features, selected_features, shap_explainer_name, new_selected_features = \
                         self.getExplainableFile()
                     # show weights of the model in the pipeline if the pipeline has feature selection
-                    # eli5_weights = eli5.show_weights(pipeline_model, feature_names=selected_features)
-                    # with open(os.path.join(eli5_folder_path, 'eli5_weights.html'), 'wb') as f:
-                    #     f.write(eli5_weights.data.encode("UTF-8"))
-                    #     eli5_weights_file = os.path.join(eli5_folder_path, 'eli5_weights.html')
-                    # show local prediction of the selected row (pipeline with feature selection)
-                    from eli5.sklearn import PermutationImportance
-                    #print(pipeline_model.predict(df))
                     if target_columns_exist:
                         with open(os.path.join(target_columns_file), "rb") as f:
                             target_columns = dill.load(f)
@@ -719,8 +680,7 @@ class Ui_prediction(object):
                         f.write(eli5_predictions.data.encode("UTF-8"))
                         eli5_local_prediction_file = os.path.join(eli5_folder_path, '' + str(eli5_observation_index)
                                                                   + '_eli5_explanation.html')
-                        #print(pipeline_model.predict(eli5_observation))
-                        #print(pipeline_model.predict_proba(eli5_observation))
+
                         # Message Box open prediction
                         if os.path.isfile(eli5_weights_file):
                             msg_done = QMessageBox()
@@ -744,13 +704,6 @@ class Ui_prediction(object):
                             if msg_done.clickedButton() == perm_imp_btn:
                                 webbrowser.open(perm_impo_file, new=2)
                 else:
-                    # show weights of the model in the pipeline if the pipeline does not have feature selection
-                    # eli5_weights = eli5.show_weights(pipeline_model,
-                    #                                  feature_names=all_features)
-                    # with open(os.path.join(eli5_folder_path, 'eli5_weights.html'), 'wb') as f:
-                    #     f.write(eli5_weights.data.encode("UTF-8"))
-                    #     eli5_weights_file = os.path.join(eli5_folder_path, 'eli5_weights.html')
-                    #     print(eli5_weights_file)
                     # show local prediction of the selected row (pipeline with no feature selection)
                     if target_columns_exist:
                         with open(os.path.join(target_columns_file), "rb") as f:
@@ -1183,7 +1136,7 @@ class Ui_prediction(object):
     # #########################################
 
     def back(self):
-        from main_page import Ui_MainWindow
+        from main.main_page import Ui_MainWindow
         main_page = QtWidgets.QMainWindow()
         main_page.ui = Ui_MainWindow()
         main_page.ui.setupUi(main_page)
@@ -1194,7 +1147,7 @@ class Ui_prediction(object):
 #     import sys
 #     app = QtWidgets.QApplication(sys.argv)
 #     prediction = QtWidgets.QDialog()
-#     ui = Ui_prediction()
-#     ui.setupUi(prediction)
+#     training_ui = Ui_prediction()
+#     training_ui.setupUi(prediction)
 #     prediction.show()
 #     sys.exit(app.exec_())
