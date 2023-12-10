@@ -6,9 +6,6 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-
-import pandas as pd
-from ydata_profiling import ProfileReport
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel
@@ -23,11 +20,9 @@ from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-from datetime import datetime
 
 from main.create.data_analyzer import DataAnalyzer
 from main.create.data_profiler import DataProfiler
-from main.create.message_box import MessageBox
 from main.predict.predict_main import Ui_prediction as Form1
 
 

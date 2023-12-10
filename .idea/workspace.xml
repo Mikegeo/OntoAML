@@ -5,9 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="096a4fc6-f174-44f4-a398-628c6f630707" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main/create/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main/create/create_main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main/predict/predict_try3.py" beforeDir="false" afterPath="$PROJECT_DIR$/main/predict/predict_main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main/create/create_main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main/create/create_main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -116,12 +114,12 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/main/create/create_main.py</url>
-          <line>482</line>
+          <line>328</line>
           <option name="timeStamp" value="2" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/main/create/create_main.py</url>
-          <line>483</line>
+          <line>330</line>
           <option name="timeStamp" value="3" />
         </line-breakpoint>
       </breakpoints>
