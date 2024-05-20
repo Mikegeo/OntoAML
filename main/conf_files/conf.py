@@ -8,6 +8,8 @@ k = np.arange(0.05, 1.01, 0.05)
 parameters  = {'min_sample_split' : k}
 """
 
+ontology_filepath = {"file_path": '/OntoAML/main/ontology/version14.rdf'}
+
 algorithms_config_dict = {
 
     # Classifiers

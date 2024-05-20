@@ -1,0 +1,4 @@
+{
+    "ontology_path": "../ontology/version14.rdf",
+    "ntriples_path": "../reasonerTest6.nt"
+}

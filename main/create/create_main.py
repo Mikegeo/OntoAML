@@ -23,7 +23,11 @@ from PyQt5.QtCore import *
 
 from main.create.data_analyzer import DataAnalyzer
 from main.create.data_profiler import DataProfiler
+from main.enums.python_pipeline_enums import PythonPipelineEnums, PipelineCodeWithMetricsEnum
 from main.predict.predict_main import Ui_prediction as Form1
+
+import owlready2
+owlready2.JAVA_EXE = r"C:\Users\michalis.g\Protege-5.5.0\jre\bin\java.exe"
 
 
 class CheckableComboBox(QComboBox):
@@ -412,6 +416,24 @@ class Ui_Training(object):
         # #######################################
         # ####### CREATE ONTOLOGY INDIVIDUAL ####
         # #######################################
+    @staticmethod
+    def load_config():
+        # Get the directory of the current script (create.py)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        # Path to the configuration file
+        config_path = os.path.join(script_dir, '..', 'conf_files', 'conf.json')
+        with open(config_path, 'r') as config_file:
+            config = json.load(config_file)
+        return config
+
+    def get_file_path(self, config_key):
+        # Load the configuration file
+        config = self.load_config()
+        # Get the directory of the main directory
+        main_dir = os.path.abspath(os.path.join(os.path.dirname(__file__)))
+        # Construct the path to the file specified in the config file
+        file_path = os.path.join(main_dir, config[config_key])
+        return file_path
 
     def createIndividual(self):
         path = self.datasetPathLineEdit.text()
@@ -425,7 +447,13 @@ class Ui_Training(object):
                 categorical_columns_with_numerical_values, column_list, num_columns_with_cat_values = self.datasetDetails()
             # Load the ontology (load ntriples or xml to get the rules)
             world = World()
-            onto = world.get_ontology("file:///Users/micha/PycharmProjects/MLPipeline/version14.rdf").load()
+            # file_path = '/OntoAML/main/ontology/version14.rdf'
+            ontology_path = self.get_file_path('ontology_path')
+            if not ontology_path:
+                print("Ontology not found")
+                return
+            onto = world.get_ontology(ontology_path).load()
+            # onto = world.get_ontology("file:///Users/micha/PycharmProjects/MLPipeline/version14.rdf").load()
             # create a new dataset individual
             new_dataset = onto.Dataset(dataset_name + "_Dataset")
             new_dataset.hasName = [dataset_name]
@@ -502,6 +530,7 @@ class Ui_Training(object):
         # ############## RUN REASONER ##################
         # ########### CREATE THE PIPELINES #############
         # ##############################################
+    # Patch the original function
 
     def runReasoner(self):
         if self.getUserPreferences() is None:
@@ -518,8 +547,10 @@ class Ui_Training(object):
             # print(latest_file)
             self.runPipelinesBtn.setEnabled(True)
             # call the ontology preferred in n_triples
+            # Set the Java heap size to 1GB
+            # owlready2.reasoning.sync_reasoner_pellet = self.sync_reasoner_pellet_modified
             world2 = World()
-            inferences = world2.get_ontology("file:///Users/micha/PycharmProjects/MLPipeline/reasonerTest6.nt").load()
+            inferences = world2.get_ontology(r"C:\Users\michalis.g\Desktop\PhD\OntoAML\main\reasonerTest6.nt").load()
             with inferences:
                 sync_reasoner_pellet(world2, infer_property_values=True, infer_data_property_values=True)
 
@@ -660,34 +691,7 @@ class Ui_Training(object):
                     f = open(os.path.join("" + main_folder + "/" + "" + model_name_only + ""
                                           + "_Pipeline", "" + model_name_only + "" + "_pipeline.py"), "w+")
                     # write the main imports of the file
-                    f.write("""
-# Standard Imports
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
-import os
-import joblib
-from sklearn.preprocessing import LabelEncoder
-from sklearn import metrics
-import shap
-import lime
-import dill
-
-from sklearn import set_config                      # to change the display
-from sklearn.utils import estimator_html_repr       # to save the diagram into HTML format
-
-from sklearn.model_selection import learning_curve
-from sklearn.metrics import accuracy_score
-
-# eli5 purposes
-sel_fea = []
-selected_features = []
-new_selected_features = []
-
-             """)
+                    f.write(PythonPipelineEnums.pipeline_imports.value)
                     f.write("\n")  # change line
                     f.write("# Imports from the selected algorithms\n")
                     # call the imports of each inferred primitive
@@ -811,11 +815,7 @@ new_selected_features = []
                             # f.write(value + " = " + value + "()" + "\n")
                     # f.write("\n\n")  # change line
                     # create the column transformer for numerical data
-                    f.write("""
-# creating the pipeline starting with the preprocessing algorithms of 
-# numerical values then the preprocessing algorithms of categorical values,
-# next we create the feature selection if there is any and in the end we add 
-# the selected machine learning model.\n""")
+                    f.write(PythonPipelineEnums.pipeline_comments.value)
                     f.write("numeric_transformer = Pipeline(steps=[\n")
                     if len(pre_proc_pipeline_points) == 0:
                         f.write("   ('pass', 'passthrough')" + "\n")
@@ -865,20 +865,14 @@ new_selected_features = []
                     if (len(numerical_columns) != 0) and (len(categorical_columns) == 0):
                         # create preprocessor from numeric_transformer with no categorical transformer since there are
                         # no categorical features
-                        f.write("""preprocessor = ColumnTransformer(transformers=[
-                                                         ('num', numeric_transformer, num_features),
-                                                         ('cat', 'passthrought', cat_features)])\n\n""")
+                        f.write(PythonPipelineEnums.no_categorical_features_preprocessor.value)
                     elif (len(numerical_columns) == 0) and (len(categorical_columns) != 0):
                         # create preprocessor categorical_transformer without numerical transformer since there are no
                         # numerical features
-                        f.write("""preprocessor = ColumnTransformer(transformers=[
-                                                         ('num', 'passthrough', num_features),
-                                                         ('cat', categorical_transformer, cat_features)])\n\n""")
+                        f.write(PythonPipelineEnums.numerical_features_preprocessor.value)
                     elif (len(numerical_columns) != 0) and (len(categorical_columns) != 0):
                         # create preprocessor from numeric_transformer and categorical_transformer
-                        f.write("""preprocessor = ColumnTransformer(transformers=[
-                                                    ('num', numeric_transformer, num_features),
-                                                    ('cat', categorical_transformer, cat_features)])\n\n""")
+                        f.write(PythonPipelineEnums.numerical_and_cateorical_features_preprocessor.value)
                     # create the pipeline #############################################
                     f.write("pipeline = Pipeline(steps=[\n")
                     f.write("   ('preprocessor', preprocessor),\n")
@@ -1014,24 +1008,9 @@ new_selected_features = []
                     f.write(" }\n")
                     # print the data_set split and use the label encoder to the y
                     if machine_learning_problem == "Classification":
-                        f.write("""
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, random_state=0)
-labelencoder_Y = LabelEncoder()
-labelencoder_Y.fit(y)
-Y_train = labelencoder_Y.transform(y_train)
-Y_test = labelencoder_Y.transform(y_test)
-Y_all = labelencoder_Y.transform(y)
-
-# create target_labels for interpretability 
-target_names = labelencoder_Y.inverse_transform(Y_all)
-target_labels = list(dict.fromkeys(target_names))
-file_dir = os.path.dirname(__file__)
-target_labels_file = open(os.path.join(file_dir, 'target_labels.pkl'), "wb")
-dill.dump(target_labels, target_labels_file)
-                     """)
+                        f.write(PythonPipelineEnums.classification_ml_problem.value)
                     elif machine_learning_problem == "Regression":
-                        f.write(
-                            "X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.2, random_state=0)")
+                        f.write(PythonPipelineEnums.data_split.value)
                     # take the name of the model
                     model_name = ""
                     model_name2 = ""
@@ -1115,7 +1094,7 @@ plt.savefig(plot_image, dpi=250, format='png', bbox_inches='tight')
 set_config(display="diagram")
 pipeline_diagram = estimator_html_repr(pipeline)
 pipeline_diagram_file = open(os.path.join(file_dir, 'pipeline_diagram.html'), "w", encoding='utf-8')
-pipeline_diagram_file.write(pipeline_diagram) 
+pipeline_diagram_file.write(pipeline_diagram)
 
 # ###################################
 # ######### METRICS #################
@@ -1133,7 +1112,7 @@ def show_values(pc, fmt="%.2f", **kw):
             color = (1.0, 1.0, 1.0)
         ax.text(x, y, fmt % value, ha="center", va="center", color=color, **kw)
 
-       
+
 def cm2inch(*tupl):
     inch = 2.54
     if type(tupl[0]) == tuple:
@@ -1141,8 +1120,7 @@ def cm2inch(*tupl):
     else:
         return tuple(i/inch for i in tupl)
 
-
-def heatmap(AUC, title, xlabel, ylabel, xticklabels, yticklabels, figure_width=40, figure_height=20, 
+def heatmap(AUC, title, xlabel, ylabel, xticklabels, yticklabels, figure_width=40, figure_height=20,
             correct_orientation=False, cmap='RdBu'):
 
     # Plot it out
@@ -1273,7 +1251,7 @@ def print_report(random_search):
     filename_scores.write("{:0.2f}".format(last_overfit_gap) + "\\n")
     filename_scores.write("{:0.3f}".format(last_overfit_gap) + "\\n")
     filename_scores.write("{:0.4f}".format(last_overfit_gap) + "\\n")
-    filename_scores.close()    
+    filename_scores.close()
     # HTML report
     report_dict = metrics.classification_report(y_true, y_pred, target_names=target_labels, output_dict=True)
     report_df = pd.DataFrame(report_dict).transpose()
@@ -1322,8 +1300,6 @@ def print_report(random_search):
     filename_scores_html.write("<font size= "'6'"><b> " + "Learning Curve - Overfitting or Underfitting:" + "</b></font><br>")
     filename_scores_html.write('<img src = "' + overfitting_plot + '" alt ="cfg">')
     filename_scores_html.close()
-    
-    
 print_report(pipeline)
 filename = os.path.join(file_dir, """ + model_name2 + """)
 joblib.dump(pipeline, filename=filename)\n\n""")
@@ -1356,7 +1332,6 @@ overfit_estimation = train_acc - val_acc
 # Generate a learning curve to estimate the overfit
 train_sizes, train_scores, test_scores = learning_curve(pipeline, X, Y_all, cv=5, scoring="accuracy", n_jobs=-1,
                                                         train_sizes=np.linspace(0.1, 1.0, 10))
-                                                        
 # Calculate the training and testing accuracy with learning curve
 train_acc_learning_curve = np.mean(train_scores, axis=1)
 val_acc_learning_curve = np.mean(test_scores, axis=1)
@@ -1410,7 +1385,6 @@ def show_values(pc, fmt="%.2f", **kw):
         else:
             color = (1.0, 1.0, 1.0)
         ax.text(x, y, fmt % value, ha="center", va="center", color=color, **kw)
-
        
 def cm2inch(*tupl):
     inch = 2.54
@@ -1693,7 +1667,7 @@ def show_values(pc, fmt="%.2f", **kw):
             color = (1.0, 1.0, 1.0)
         ax.text(x, y, fmt % value, ha="center", va="center", color=color, **kw)
 
-       
+
 def cm2inch(*tupl):
     inch = 2.54
     if type(tupl[0]) == tuple:
@@ -1748,7 +1722,7 @@ def heatmap(AUC, title, xlabel, ylabel, xticklabels, yticklabels, figure_width=4
     # resize
     fig = plt.gcf()
     fig.set_size_inches(cm2inch(figure_width, figure_height))
-        
+
 
 def plot_classification_report(classification_report, title='Classification report ', cmap='RdBu'):
     lines = classification_report.split('\\n')
@@ -1886,7 +1860,7 @@ def print_report(random_search):
     filename_scores_html.write("<font size= "'6'"><b> " + "Learning Curve - Overfitting or Underfitting:" + "</b></font><br>")
     filename_scores_html.write('<img src = "' + overfitting_plot + '" alt ="cfg">')
     filename_scores_html.close()
-    
+
 
 print_report(pipeline)
 filename = os.path.join(file_dir, """ + model_name2 + """)
