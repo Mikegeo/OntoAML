@@ -27,7 +27,8 @@ from main.enums.python_pipeline_enums import PythonPipelineEnums, PipelineCodeWi
 from main.predict.predict_main import Ui_prediction as Form1
 
 import owlready2
-owlready2.JAVA_EXE = r"C:\Users\michalis.g\Protege-5.5.0\jre\bin\java.exe"
+# owlready2.JAVA_EXE = r"C:\Users\michalis.g\Protege-5.5.0\jre\bin\java.exe"
+owlready2.JAVA_EXE = r"C:\Users\xd00067\Protege-5.6.4\jre\bin\java.exe"
 
 
 class CheckableComboBox(QComboBox):
