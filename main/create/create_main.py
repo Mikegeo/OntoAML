@@ -28,6 +28,7 @@ from main.predict.predict_main import Ui_prediction as Form1
 
 import owlready2
 # owlready2.JAVA_EXE = r"C:\Users\michalis.g\Protege-5.5.0\jre\bin\java.exe"
+# change this path
 owlready2.JAVA_EXE = r"C:\Users\xd00067\Protege-5.6.4\jre\bin\java.exe"
 
 
@@ -551,7 +552,8 @@ class Ui_Training(object):
             # Set the Java heap size to 1GB
             # owlready2.reasoning.sync_reasoner_pellet = self.sync_reasoner_pellet_modified
             world2 = World()
-            inferences = world2.get_ontology(r"C:\Users\michalis.g\Desktop\PhD\OntoAML\main\reasonerTest6.nt").load()
+            # change this path
+            inferences = world2.get_ontology(r"C:\Users\xd00067\Desktop\OntoAML\main\create\reasonerTest6.nt").load()
             with inferences:
                 sync_reasoner_pellet(world2, infer_property_values=True, infer_data_property_values=True)
 
