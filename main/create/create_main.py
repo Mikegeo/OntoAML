@@ -27,6 +27,7 @@ from main.enums.python_pipeline_enums import PythonPipelineEnums, PipelineCodeWi
 from main.predict.predict_main import Ui_prediction as Form1
 
 import owlready2
+
 # owlready2.JAVA_EXE = r"C:\Users\michalis.g\Protege-5.5.0\jre\bin\java.exe"
 # change this path
 owlready2.JAVA_EXE = r"C:\Users\xd00067\Protege-5.6.4\jre\bin\java.exe"
@@ -418,6 +419,7 @@ class Ui_Training(object):
         # #######################################
         # ####### CREATE ONTOLOGY INDIVIDUAL ####
         # #######################################
+
     @staticmethod
     def load_config():
         # Get the directory of the current script (create.py)
@@ -532,6 +534,7 @@ class Ui_Training(object):
         # ############## RUN REASONER ##################
         # ########### CREATE THE PIPELINES #############
         # ##############################################
+
     # Patch the original function
 
     def runReasoner(self):
@@ -553,7 +556,7 @@ class Ui_Training(object):
             # owlready2.reasoning.sync_reasoner_pellet = self.sync_reasoner_pellet_modified
             world2 = World()
             # change this path
-            inferences = world2.get_ontology(r"C:\Users\xd00067\Desktop\OntoAML\main\create\reasonerTest6.nt").load()
+            inferences = world2.get_ontology(r"C:\Users\xd00067\Desktop\OntoAML\main\reasonerTest6.nt").load()
             with inferences:
                 sync_reasoner_pellet(world2, infer_property_values=True, infer_data_property_values=True)
 
@@ -1169,7 +1172,7 @@ def heatmap(AUC, title, xlabel, ylabel, xticklabels, yticklabels, figure_width=4
     # resize
     fig = plt.gcf()
     fig.set_size_inches(cm2inch(figure_width, figure_height))
-        
+
 
 def plot_classification_report(classification_report, title='Classification report ', cmap='RdBu'):
     lines = classification_report.split('\\n')
@@ -1388,7 +1391,7 @@ def show_values(pc, fmt="%.2f", **kw):
         else:
             color = (1.0, 1.0, 1.0)
         ax.text(x, y, fmt % value, ha="center", va="center", color=color, **kw)
-       
+
 def cm2inch(*tupl):
     inch = 2.54
     if type(tupl[0]) == tuple:
@@ -1443,7 +1446,7 @@ def heatmap(AUC, title, xlabel, ylabel, xticklabels, yticklabels, figure_width=4
     # resize
     fig = plt.gcf()
     fig.set_size_inches(cm2inch(figure_width, figure_height))
-        
+
 
 def plot_classification_report(classification_report, title='Classification report ', cmap='RdBu'):
     lines = classification_report.split('\\n')
@@ -2009,7 +2012,7 @@ def regression_results(y_true, y_pred):
     filename_scores_html.write("<font size= "'6'"><b> " + "Learning Curve - Overfitting or Underfitting:" + "</b></font><br>")
     filename_scores_html.write('<img src = "' + overfitting_plot + '" alt ="cfg">')
     filename_scores_html.close()
-    
+
 
 y_true = y_test
 y_pred = pipeline.predict(X_test)
@@ -2883,8 +2886,8 @@ dill.dump(shap_explainer, shap_explainer_file)\n
                         if categorical_features_true[0] == 1:
                             f.write("""
 from sklearn.impute import SimpleImputer
-    
-    
+
+
 def shap_and_eli5_custom_format(x):
     j_data = convert_to_lime_format(x, categorical_names)
     imp_mean = SimpleImputer(missing_values=np.nan, strategy='median')
@@ -2900,7 +2903,7 @@ def shap_and_eli5_custom_format(x):
 # #############################################
 # ######### Permutation Importance ############
 # #############################################
-    
+
 try:
     import eli5
     from eli5.sklearn import PermutationImportance
