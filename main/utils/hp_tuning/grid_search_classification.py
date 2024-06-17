@@ -3,6 +3,8 @@ import time
 from itertools import product
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import KFold
+import json
+
 n = 5
 kf = KFold(n_splits=n)
 
@@ -106,5 +108,8 @@ else:
 pipeline.set_params(**best_params_dict)
 pipeline.get_params('MLPRegressor')
 pipeline.fit(X_train, y_train)
+best_hyperparameters = os.path.join(file_dir, 'best_hyperparameters.json')
+with open(best_hyperparameters, 'w') as file:
+    json.dump(best_params_dict, file, indent=4)
 ###########################################################################
 ###########################################################################

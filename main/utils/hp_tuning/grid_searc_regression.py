@@ -3,6 +3,7 @@ import time
 from itertools import product
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import KFold
+import json
 n = 4
 kf = KFold(n_splits=n)
 
@@ -93,5 +94,8 @@ if std_score < 0.1 * best_score:
     print("The scores are relatively consistent.")
 else:
     print("The scores are relatively inconsistent.")
+best_hyperparameters = os.path.join(file_dir, 'best_hyperparameters.json')
+with open(best_hyperparameters, 'w') as file:
+    json.dump(best_params_dict, file, indent=4)
 ###########################################################################
 ###########################################################################
