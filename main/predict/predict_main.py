@@ -614,27 +614,44 @@ class Ui_prediction(object):
                     x_lime.iloc[:, k] = x_lime.iloc[:, k].map(label_map)
                 return x_lime
 
+            # def shap_and_eli5_custom_format(x):
+            #     j_data = convert_to_lime_format(x, categorical_names)
+            #     print(j_data)
+            #     mean_imputer = SimpleImputer(strategy='median')
+            #     frequent_imputer = SimpleImputer(strategy='most_frequent')
+            #
+            #     custom_data = pd.DataFrame(columns=x.columns, index=j_data.index)
+            #     for col in j_data.columns:
+            #         if j_data[col].dtype == 'float' or j_data[col].dtype == 'int':
+            #             mean_imputer.fit(j_data[[col]])
+            #             custom_data.loc[:, [col]] = mean_imputer.transform(j_data[[col]])
+            #         else:
+            #             frequent_imputer.fit(j_data[[col]])
+            #             custom_data.loc[:, [col]] = frequent_imputer.transform(j_data[[col]])
+            #     print(custom_data)
+            #     if check_new_selected_features[0] != "no_selected_features":
+            #         return custom_data[new_selected_features]
+            #     else:
+            #         data = x
+            #         ohe_data = pd.DataFrame(data_prepro.transform(data), columns=all_features)
+            #         return ohe_data
             def shap_and_eli5_custom_format(x):
                 j_data = convert_to_lime_format(x, categorical_names)
-                print(j_data)
-                mean_imputer = SimpleImputer(strategy='mean')
-                frequent_imputer = SimpleImputer(strategy='most_frequent')
-
-                custom_data = pd.DataFrame(columns=x.columns, index=j_data.index)
-                for col in j_data.columns:
-                    if j_data[col].dtype == 'float' or j_data[col].dtype == 'int':
-                        mean_imputer.fit(j_data[[col]])
-                        custom_data.loc[:, [col]] = mean_imputer.transform(j_data[[col]])
-                    else:
-                        frequent_imputer.fit(j_data[[col]])
-                        custom_data.loc[:, [col]] = frequent_imputer.transform(j_data[[col]])
-                print(custom_data)
+                imp_mean = SimpleImputer(missing_values=np.nan, strategy='median')
+                imp_mean.fit(j_data)
+                custom_data = pd.DataFrame(imp_mean.fit_transform(j_data), columns=x.columns, index=j_data.index)
                 if check_new_selected_features[0] != "no_selected_features":
                     return custom_data[new_selected_features]
                 else:
                     data = x
                     ohe_data = pd.DataFrame(data_prepro.transform(data), columns=all_features)
                     return ohe_data
+
+            with open(path, "r") as file:
+                missing_values_formats = ['n/a', 'na', '--', '?', ' ', 'NA', 'N/A', 'NaN']
+                reader = pd.read_csv(file, header=0, na_values=missing_values_formats, sep=None, engine='python',
+                                     encoding='UTF-8')
+                df = pd.DataFrame(data=reader)
 
             # pipeline's model
             pipeline_model = pipeline.named_steps["" + pipeline.steps[-1][0] + ""]
@@ -671,7 +688,7 @@ class Ui_prediction(object):
                                                                 target_names=target_columns)
                     else:
                         eli5_weights = eli5.show_weights(pipeline_model, feature_names=selected_features)
-                        eli5_predictions = eli5.show_prediction(pipeline_model, eli5_observation)
+                        eli5_predictions = eli5.show_prediction(pipeline_model, eli5_observation, feature_names=selected_features)
                     with open(os.path.join(eli5_folder_path, 'eli5_weights.html'), 'wb') as f:
                         f.write(eli5_weights.data.encode("UTF-8"))
                         eli5_weights_file = os.path.join(eli5_folder_path, 'eli5_weights.html')
