@@ -556,7 +556,7 @@ class Ui_Training(object):
             # owlready2.reasoning.sync_reasoner_pellet = self.sync_reasoner_pellet_modified
             world2 = World()
             # change this path
-            inferences = world2.get_ontology(r"C:\Users\xd00067\Desktop\OntoAML\main\reasonerTest6.nt").load()
+            inferences = world2.get_ontology(r"C:\Users\xd00067\source\PycharmProjects\UtilityProjects\OntoAML\main\reasonerTest6.nt").load()
             with inferences:
                 sync_reasoner_pellet(world2, infer_property_values=True, infer_data_property_values=True)
 
