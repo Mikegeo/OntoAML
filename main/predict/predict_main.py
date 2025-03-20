@@ -482,7 +482,7 @@ class Ui_prediction(object):
                         selected_features = dill.load(f)
                         # remove the values from the selected features
                         for feature in selected_features:
-                            check_new_selected_features.append(feature.split("__", 1)[0])
+                            check_new_selected_features.append(feature.split("__", 1)[1])
         else:
             check_new_selected_features.append("no_selected_features")
         return check_new_selected_features
@@ -833,22 +833,35 @@ class Ui_prediction(object):
                     x_lime.iloc[:, k] = x_lime.iloc[:, k].map(label_map)
                 return x_lime
 
-            def convert_to_imputed_lime_format(x):
-                if len(categorical_names) != 0:
-                    lime_data = convert_to_lime_format(x, categorical_names)
-                elif len(full_categorical_names) != 0:
-                    lime_data = convert_to_lime_format(x, categorical_names)
-                else:
-                    lime_data = df
-                try:
-                    imp_mean = SimpleImputer(missing_values=np.nan, strategy='median')
-                    imp_mean.fit(lime_data)
-                except:
-                    imp_mean = SimpleImputer(missing_values=np.nan, strategy='most_frequent')
-                    imp_mean.fit(lime_data)
-                imputed_lime_data = pd.DataFrame(imp_mean.fit_transform(lime_data), columns=x.columns,
-                                                 index=lime_data.index)
-                return imputed_lime_data
+            def convert_to_imputed_lime_format(X):
+                from sklearn.impute import SimpleImputer
+                # Convert to the format expected by LIME, which may not necessarily align with the original column count
+                lime_data = convert_to_lime_format(X, categorical_names)
+                imp_mean = SimpleImputer(missing_values=np.nan, strategy='median')
+                # Perform the imputation
+                imputed_data = imp_mean.fit_transform(lime_data)
+                # Since the imputation should not change the number of columns, we adjust how columns are assigned
+                # Ensure that the columns attribute is correctly set based on the output shape
+                columns_after_imputation = X.columns[:imputed_data.shape[1]]
+                imputed_lime_data = pd.DataFrame(imputed_data, columns=columns_after_imputation, index=lime_data.index)
+                return imputed_lime_data[new_selected_features]
+
+            # def convert_to_imputed_lime_format(x):
+            #     if len(categorical_names) != 0:
+            #         lime_data = convert_to_lime_format(x, categorical_names)
+            #     elif len(full_categorical_names) != 0:
+            #         lime_data = convert_to_lime_format(x, categorical_names)
+            #     else:
+            #         lime_data = df
+            #     try:
+            #         imp_mean = SimpleImputer(missing_values=np.nan, strategy='median')
+            #         imp_mean.fit(lime_data)
+            #     except:
+            #         imp_mean = SimpleImputer(missing_values=np.nan, strategy='most_frequent')
+            #         imp_mean.fit(lime_data)
+            #     imputed_lime_data = pd.DataFrame(imp_mean.fit_transform(lime_data), columns=x.columns,
+            #                                      index=lime_data.index)
+            #     return imputed_lime_data
 
             with open(path, "r") as file:
                 missing_values_formats = ['n/a', 'na', '--', '?', ' ', 'NA', 'N/A']
@@ -892,7 +905,23 @@ class Ui_prediction(object):
                 else:
                     predict_proba = pipeline.named_steps["" + pipeline.steps[-1][0] + ""].predict
                 # Lime explanation of the selected value
-                explanation = lime_explainer.explain_instance(X_observation.values[0], predict_proba, num_features=15)
+                explanation = lime_explainer.explain_instance(X_observation.values[0], predict_proba)
+                ######################################
+                ####################################
+                # Get the explanation as a list of features and their coefficients
+                exp_list = explanation.as_list()
+
+                # Filter to show only those features that push the prediction more negative
+                negative_impact_features = [feature for feature in exp_list if feature[1] < 0]
+
+                # Sort features by their absolute impact (magnitude)
+                important_features = sorted(negative_impact_features, key=lambda x: abs(x[1]), reverse=True)
+
+                # Display sorted important features
+                for feature, coef in important_features:
+                    print(f"{feature}: {coef:.2f}")
+            ##########################################
+            ###############################################
 
             # Lime explanation of the selected value
             # export the local explanation in html format
@@ -981,14 +1010,18 @@ class Ui_prediction(object):
             def shap_and_eli5_custom_format(x):
                 j_data = convert_to_lime_format(x, categorical_names)
                 imp_mean = SimpleImputer(missing_values=np.nan, strategy='median')
-                imp_mean.fit(j_data)
-                custom_data = pd.DataFrame(imp_mean.fit_transform(j_data), columns=x.columns, index=j_data.index)
-                if check_new_selected_features[0] != "no_selected_features":
-                    return custom_data[new_selected_features]
-                else:
-                    data = x
-                    ohe_data = pd.DataFrame(data_prepro.transform(data), columns=all_features)
-                    return ohe_data
+                custom_data_transformed = imp_mean.fit_transform(j_data)
+                columns_after_imputation = x.columns[:custom_data_transformed.shape[1]]
+                custom_data = pd.DataFrame(custom_data_transformed, columns=columns_after_imputation,
+                                           index=j_data.index)
+
+                # if len(new_selected_features) > 0:
+                #     return custom_data[new_selected_features]
+                # else:
+                preprocessed_data = pipeline.named_steps['preprocessor'].transform(x)
+                feature_names = all_features
+                ohe_data = pd.DataFrame(preprocessed_data, columns=feature_names, index=x.index)
+                return ohe_data[new_selected_features]
 
             with open(path, "r") as file:
                 missing_values_formats = ['n/a', 'na', '--', '?', ' ', 'NA', 'N/A', 'NaN']
@@ -1003,9 +1036,9 @@ class Ui_prediction(object):
                     imp_mean = SimpleImputer(missing_values=np.nan, strategy='median')
                     imp_mean.fit(data)
                     shap_imputed_data = pd.DataFrame(imp_mean.fit_transform(data), columns=x.columns, index=data.index)
-                    return shap_imputed_data
+                    return shap_imputed_data[new_selected_features]
                 else:
-                    return df
+                    return df[new_selected_features]
 
             if len(categorical_names) != 0:
                 print("categorical_names: yes")
